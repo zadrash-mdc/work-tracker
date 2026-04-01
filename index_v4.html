@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Work Tracker — Ministerios Una Voz Profética</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#0f0f0f; --bg2:#1a1a1a; --bg3:#242424; --bg4:#2e2e2e;
+  --text:#f0efe8; --text2:#aaa; --text3:#555;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.16);
+  --gold:#c9a84c; --gold-dim:#8a6e2f; --gold-bg:rgba(201,168,76,0.12); --gold-bg2:rgba(201,168,76,0.22);
+  --green-bg:#0d2208; --green-text:#7fc45a; --green-border:#2a5c14;
+  --red-bg:#220d0d; --red-text:#e07070; --red-border:#5c1414;
+  --blue-bg:#0d1a2e; --blue-text:#6aadee; --blue-border:#1a4070;
+  --purple-bg:#1a0d2e; --purple-text:#b06aee; --purple-border:#5c1a9e;
+  --radius:12px; --radius-sm:8px;
+}
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+.app { max-width:520px; margin:0 auto; padding:14px 14px 48px; }
+
+/* Setup */
+.setup-screen { position:fixed; inset:0; background:var(--bg); z-index:200; display:flex; align-items:center; justify-content:center; padding:24px; }
+.setup-card { background:var(--bg2); border:0.5px solid var(--border2); border-radius:var(--radius); padding:28px 22px; width:100%; max-width:380px; }
+.setup-logo { text-align:center; margin-bottom:18px; }
+.setup-logo img { width:60px; height:60px; object-fit:contain; }
+.setup-title { font-size:17px; font-weight:700; color:var(--gold); text-align:center; margin-bottom:3px; }
+.setup-sub { font-size:12px; color:var(--text3); text-align:center; margin-bottom:22px; }
+.setup-label { font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:5px; display:block; }
+.setup-input { width:100%; padding:11px 13px; font-size:15px; background:var(--bg3); border:0.5px solid var(--border2); border-radius:var(--radius-sm); color:var(--text); outline:none; font-family:inherit; margin-bottom:13px; }
+.setup-input:focus { border-color:var(--gold-dim); }
+.setup-btn { width:100%; padding:13px; font-size:15px; font-weight:700; background:var(--gold-bg2); color:var(--gold); border:0.5px solid var(--gold-dim); border-radius:var(--radius); cursor:pointer; font-family:inherit; }
+
+/* Header */
+.header { display:flex; align-items:center; gap:11px; padding:11px 13px; background:var(--bg2); border-radius:var(--radius); border:0.5px solid var(--border2); margin-bottom:12px; }
+.logo-wrap { width:38px; height:38px; border-radius:50%; background:#000; border:1.5px solid var(--gold-dim); display:flex; align-items:center; justify-content:center; flex-shrink:0; overflow:hidden; }
+.logo-wrap img { width:30px; height:30px; object-fit:contain; }
+.header-text { flex:1; min-width:0; }
+.header-org { font-size:10px; font-weight:600; color:var(--gold); text-transform:uppercase; letter-spacing:0.06em; }
+.header-name { font-size:14px; font-weight:700; color:var(--text); }
+.header-right { display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
+.sync-row { display:flex; align-items:center; gap:4px; font-size:10px; color:var(--text3); }
+.sync-dot { width:6px; height:6px; border-radius:50%; background:var(--green-border); }
+.sync-dot.syncing { background:var(--gold); animation:pulse 1s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.edit-btn { font-size:10px; color:var(--text3); background:none; border:none; cursor:pointer; text-decoration:underline; }
+
+/* Mode toggle — the main switch */
+.mode-toggle { display:flex; gap:6px; margin-bottom:14px; }
+.mode-btn { flex:1; padding:11px 8px; font-size:13px; font-weight:600; border-radius:var(--radius); border:0.5px solid var(--border2); cursor:pointer; background:var(--bg2); color:var(--text2); transition:all 0.2s; text-align:center; }
+.mode-btn .mode-icon { font-size:18px; display:block; margin-bottom:3px; }
+.mode-btn.active.office { background:var(--green-bg); color:var(--green-text); border-color:var(--green-border); }
+.mode-btn.active.remote { background:var(--blue-bg); color:var(--blue-text); border-color:var(--blue-border); }
+
+/* Tabs */
+.tabs { display:flex; background:var(--bg2); border-radius:var(--radius); padding:3px; margin-bottom:13px; gap:2px; border:0.5px solid var(--border); }
+.tab { flex:1; padding:7px 4px; font-size:12px; font-weight:500; border:none; border-radius:var(--radius-sm); cursor:pointer; background:transparent; color:var(--text2); }
+.tab.active { background:var(--bg4); color:var(--gold); }
+
+/* Cards */
+.card { background:var(--bg2); border-radius:var(--radius); border:0.5px solid var(--border); padding:15px; margin-bottom:11px; }
+.card-title { font-size:10px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:0.07em; margin-bottom:11px; }
+
+/* Metrics */
+.metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:7px; margin-bottom:11px; }
+.metric { background:var(--bg2); border-radius:var(--radius-sm); padding:11px 9px; border:0.5px solid var(--border); }
+.metric-label { font-size:10px; color:var(--text3); margin-bottom:3px; text-transform:uppercase; letter-spacing:0.04em; }
+.metric-value { font-size:18px; font-weight:700; color:var(--text); line-height:1; }
+.metric-value.gold { color:var(--gold); }
+.metric-sub { font-size:10px; color:var(--text3); margin-top:2px; }
+
+/* ===== OFFICE MODE ===== */
+.type-row { display:flex; gap:6px; margin-bottom:11px; }
+.type-btn { flex:1; padding:8px; font-size:12px; font-weight:500; border:0.5px solid var(--border2); border-radius:var(--radius-sm); cursor:pointer; background:var(--bg3); color:var(--text2); }
+.type-btn.active { background:var(--green-bg); color:var(--green-text); border-color:var(--green-border); }
+.clock-btn { width:100%; padding:14px; font-size:16px; font-weight:700; border-radius:var(--radius); border:0.5px solid var(--border2); cursor:pointer; background:var(--bg3); color:var(--text); }
+.clock-btn.clkin  { background:var(--red-bg);   color:var(--red-text);   border-color:var(--red-border); }
+.clock-btn.clkout { background:var(--green-bg); color:var(--green-text); border-color:var(--green-border); }
+.status-row { display:flex; justify-content:space-between; align-items:center; margin-top:9px; }
+.badge { display:inline-block; font-size:11px; font-weight:500; padding:3px 9px; border-radius:20px; }
+.badge-in  { background:var(--red-bg);  color:var(--red-text); }
+.badge-out { background:var(--bg3);     color:var(--text3); }
+.live-timer { font-size:13px; color:var(--gold); font-variant-numeric:tabular-nums; font-weight:600; }
+
+/* ===== REMOTE / BILLABLE MODE ===== */
+.act-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; margin-bottom:11px; }
+.act-btn { padding:8px 5px; font-size:11px; font-weight:500; border:0.5px solid var(--border2); border-radius:var(--radius-sm); cursor:pointer; background:var(--bg3); color:var(--text2); text-align:center; line-height:1.3; }
+.act-btn .ai { font-size:15px; display:block; margin-bottom:2px; }
+.act-btn.active { background:var(--blue-bg); color:var(--blue-text); border-color:var(--blue-border); }
+.billable-clock { text-align:center; padding:16px 0 12px; }
+.billable-time { font-size:48px; font-weight:700; color:var(--gold); font-variant-numeric:tabular-nums; line-height:1; }
+.billable-time.stopped { color:var(--text3); }
+.billable-units { margin-top:8px; font-size:13px; color:var(--text2); }
+.billable-units span { color:var(--gold); font-weight:700; font-size:15px; }
+.inc-pills { display:flex; gap:3px; flex-wrap:wrap; margin-top:8px; justify-content:center; }
+.inc-pill { font-size:10px; padding:2px 6px; background:var(--bg3); border:0.5px solid var(--border); border-radius:20px; color:var(--text3); }
+.inc-pill.lit { background:var(--gold-bg); border-color:var(--gold-dim); color:var(--gold); font-weight:600; }
+.inc-pill.past { opacity:0.3; }
+.bill-controls { display:flex; gap:7px; margin-top:12px; }
+.bill-start { flex:2; padding:13px; font-size:15px; font-weight:700; border-radius:var(--radius); border:none; cursor:pointer; font-family:inherit; }
+.bill-start.idle    { background:var(--blue-bg); color:var(--blue-text); border:0.5px solid var(--blue-border); }
+.bill-start.running { background:var(--red-bg);  color:var(--red-text);  border:0.5px solid var(--red-border); }
+.bill-discard { flex:1; padding:13px; font-size:12px; font-weight:500; border-radius:var(--radius); border:0.5px solid var(--border2); cursor:pointer; background:var(--bg3); color:var(--text3); font-family:inherit; }
+.desc-input { width:100%; padding:9px 11px; font-size:13px; background:var(--bg3); border:0.5px solid var(--border2); border-radius:var(--radius-sm); color:var(--text); outline:none; font-family:inherit; margin-top:9px; }
+.desc-input:focus { border-color:var(--gold-dim); }
+
+/* Thursday banner */
+.thu-banner { border-radius:var(--radius); padding:13px 15px; margin-bottom:11px; border:0.5px solid; }
+.thu-banner.pre  { background:var(--gold-bg);  border-color:var(--gold-dim); }
+.thu-banner.due  { background:var(--gold-bg2); border-color:var(--gold); animation:urgentPulse 2s infinite; }
+@keyframes urgentPulse { 0%,100%{opacity:1} 50%{opacity:0.75} }
+.thu-title { font-size:13px; font-weight:700; color:var(--gold); margin-bottom:3px; }
+.thu-sub   { font-size:11px; color:var(--gold-dim); margin-bottom:9px; }
+.thu-btn   { width:100%; padding:9px; font-size:13px; font-weight:700; background:var(--gold); color:#0f0f0f; border:none; border-radius:var(--radius-sm); cursor:pointer; font-family:inherit; }
+
+/* Log entries */
+.filter-row { display:flex; gap:5px; margin-bottom:11px; }
+.fbtn { flex:1; padding:6px 4px; font-size:11px; font-weight:500; border:0.5px solid var(--border); border-radius:var(--radius-sm); cursor:pointer; background:var(--bg3); color:var(--text2); text-align:center; }
+.fbtn.active { background:var(--gold-bg); color:var(--gold); border-color:var(--gold-dim); }
+.entry { background:var(--bg3); border-radius:var(--radius-sm); border:0.5px solid var(--border); padding:10px 12px; margin-bottom:6px; }
+.entry-row { display:flex; justify-content:space-between; align-items:flex-start; }
+.entry-mode-dot { display:inline-block; width:7px; height:7px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+.entry-mode-dot.office { background:var(--green-border); }
+.entry-mode-dot.remote { background:var(--blue-border); }
+.entry-label { font-size:12px; font-weight:600; color:var(--text); }
+.entry-sub { font-size:11px; color:var(--text3); margin-top:2px; }
+.entry-val { font-size:14px; font-weight:700; color:var(--text); text-align:right; }
+.entry-val-sub { font-size:10px; color:var(--text3); text-align:right; margin-top:1px; }
+.del-btn { background:none; border:none; cursor:pointer; color:var(--text3); font-size:12px; padding:0 0 0 8px; }
+.empty { text-align:center; padding:28px; color:var(--text3); font-size:13px; }
+
+/* ===== UNIFIED REPORT ===== */
+.rpt-header { display:flex; align-items:center; gap:12px; padding-bottom:14px; margin-bottom:14px; border-bottom:0.5px solid var(--border2); }
+.rpt-logo { width:44px; height:44px; border-radius:50%; background:#000; border:1.5px solid var(--gold-dim); overflow:hidden; display:flex; align-items:center; justify-content:center; }
+.rpt-logo img { width:34px; height:34px; object-fit:contain; }
+.rpt-org { font-size:12px; font-weight:700; color:var(--gold); }
+.rpt-person { font-size:15px; font-weight:700; color:var(--text); margin-top:2px; }
+.rpt-period { font-size:11px; color:var(--text3); margin-top:2px; }
+.rpt-section { margin-bottom:18px; }
+.rpt-section-title { font-size:11px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:0.07em; margin-bottom:8px; padding-bottom:6px; border-bottom:0.5px solid var(--border); }
+.rpt-table { width:100%; border-collapse:collapse; font-size:12px; }
+.rpt-table th { font-size:10px; font-weight:700; color:var(--text3); text-transform:uppercase; letter-spacing:0.04em; padding:4px 7px; text-align:left; border-bottom:0.5px solid var(--border2); }
+.rpt-table td { padding:7px 7px; border-bottom:0.5px solid var(--border); color:var(--text); vertical-align:top; }
+.rpt-table .sub { font-size:10px; color:var(--text3); }
+.act-tag { display:inline-block; font-size:10px; padding:1px 6px; border-radius:20px; background:var(--blue-bg); color:var(--blue-text); border:0.5px solid var(--blue-border); }
+.rpt-subtotal { display:flex; justify-content:space-between; padding:9px 10px; background:var(--bg3); border-radius:var(--radius-sm); margin-top:6px; font-size:13px; font-weight:600; }
+.rpt-grand { display:flex; justify-content:space-between; padding:13px 14px; background:var(--gold-bg2); border:0.5px solid var(--gold-dim); border-radius:var(--radius); margin-top:14px; }
+.rpt-grand-label { font-size:14px; font-weight:700; color:var(--gold); }
+.rpt-grand-val { font-size:18px; font-weight:700; color:var(--gold); }
+.send-section { margin-top:14px; }
+.mgr-chips { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:9px; }
+.mgr-chip { font-size:12px; padding:4px 10px; background:var(--gold-bg); color:var(--gold); border:0.5px solid var(--gold-dim); border-radius:20px; cursor:pointer; }
+.form-label { font-size:11px; color:var(--text2); margin-bottom:4px; display:block; text-transform:uppercase; letter-spacing:0.04em; }
+.form-input { width:100%; padding:9px 11px; font-size:13px; background:var(--bg3); border:0.5px solid var(--border2); border-radius:var(--radius-sm); color:var(--text); outline:none; font-family:inherit; margin-bottom:9px; }
+.form-input:focus { border-color:var(--gold-dim); }
+.send-btn { width:100%; padding:13px; font-size:15px; font-weight:700; background:var(--gold-bg2); color:var(--gold); border:0.5px solid var(--gold-dim); border-radius:var(--radius); cursor:pointer; font-family:inherit; }
+
+/* Manual form helpers */
+.type-btn { flex:1; padding:8px; font-size:12px; font-weight:500; border:0.5px solid var(--border2); border-radius:var(--radius-sm); cursor:pointer; background:var(--bg3); color:var(--text2); }
+.type-btn.active { background:var(--green-bg); color:var(--green-text); border-color:var(--green-border); }
+.type-row { display:flex; gap:6px; margin-bottom:0; }
+
+/* Toast */
+.toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--gold); color:#0f0f0f; padding:10px 20px; border-radius:20px; font-size:13px; font-weight:600; opacity:0; transition:all 0.25s; pointer-events:none; white-space:nowrap; z-index:999; }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f0f0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Work Tracker">
+<link rel="apple-touch-icon" href="icon-192.png">
+</head>
+<body>
+
+<!-- SETUP -->
+<div class="setup-screen" id="setup-screen">
+  <div class="setup-card">
+    <div class="setup-logo"><img id="setup-logo" src="" alt="" /></div>
+    <div class="setup-title">Ministerios Una Voz Profética</div>
+    <div class="setup-sub">Work Tracker — First-time setup</div>
+    <label class="setup-label">Your full name</label>
+    <input class="setup-input" type="text" id="setup-name" placeholder="Full name" autocomplete="name" />
+    <label class="setup-label">Your email</label>
+    <input class="setup-input" type="email" id="setup-email" placeholder="your@email.com" autocomplete="email" />
+    <button class="setup-btn" onclick="completeSetup()">Start tracking →</button>
+  </div>
+</div>
+
+<div class="app" id="main-app" style="display:none">
+  <div id="toast" class="toast"></div>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo-wrap"><img id="logo-img" src="" alt="" /></div>
+    <div class="header-text">
+      <div class="header-org">Ministerios Una Voz Profética</div>
+      <div class="header-name" id="hdr-name">—</div>
+    </div>
+    <div class="header-right">
+      <div class="sync-row"><span class="sync-dot" id="sync-dot"></span><span id="sync-status">Saved</span></div>
+      <button class="edit-btn" onclick="showSetup()">edit profile</button>
+    </div>
+  </div>
+
+  <!-- MODE TOGGLE -->
+  <div class="mode-toggle">
+    <button class="mode-btn active office" id="mode-office" onclick="setMode('office')">
+      <span class="mode-icon">🏢</span>Office
+    </button>
+    <button class="mode-btn remote" id="mode-remote" onclick="setMode('remote')">
+      <span class="mode-icon">💻</span>Remote
+    </button>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" id="tab-btn-track" onclick="showTab('track')">Track</button>
+    <button class="tab" id="tab-btn-manual" onclick="showTab('manual')">Manual</button>
+    <button class="tab" id="tab-btn-log" onclick="showTab('log')">Log</button>
+    <button class="tab" id="tab-btn-report" onclick="showTab('report')">Report</button>
+  </div>
+
+  <!-- ===== TRACK TAB ===== -->
+  <div id="tab-track">
+
+    <!-- Thursday banner -->
+    <div id="thu-banner" style="display:none"></div>
+
+    <!-- OFFICE TRACK -->
+    <div id="office-track">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">This week</div><div class="metric-value" id="o-week-hrs">0.0h</div><div class="metric-sub" id="o-week-entries">0 entries</div></div>
+        <div class="metric"><div class="metric-label">Total pay</div><div class="metric-value gold" id="o-week-pay">$100</div><div class="metric-sub">hrs + cursos</div></div>
+        <div class="metric"><div class="metric-label">Today</div><div class="metric-value" id="o-today-hrs">0.0h</div><div class="metric-sub" id="o-today-label">—</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Clock in / out</div>
+        <button class="clock-btn clkout" id="clk-btn" onclick="toggleClock()"><span id="clk-label">Clock In</span></button>
+        <div class="status-row">
+          <span class="badge badge-out" id="clk-badge">Not clocked in</span>
+          <span class="live-timer" id="clk-timer">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- REMOTE TRACK -->
+    <div id="remote-track" style="display:none">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Today units</div><div class="metric-value" id="r-today-inc">0.0</div><div class="metric-sub">6-min increments</div></div>
+        <div class="metric"><div class="metric-label">Today hrs</div><div class="metric-value" id="r-today-hrs">0.0h</div><div class="metric-sub">raw time</div></div>
+        <div class="metric"><div class="metric-label">Week units</div><div class="metric-value gold" id="r-week-inc">0.0</div><div class="metric-sub">billable</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Activity type</div>
+        <div class="act-grid" id="act-grid"></div>
+        <input class="desc-input" type="text" id="bill-desc" placeholder="Description — e.g. Review contract with Roy Jimenez" />
+      </div>
+      <div class="card">
+        <div class="billable-clock">
+          <div class="billable-time stopped" id="bill-clock">00:00:00</div>
+          <div class="billable-units">Billable: <span id="bill-inc">0.0</span> units <span style="color:var(--text3);font-size:11px">(6-min)</span></div>
+          <div class="inc-pills" id="inc-pills"></div>
+        </div>
+        <div class="bill-controls">
+          <button class="bill-start idle" id="bill-btn" onclick="toggleBillable()">▶ Start timer</button>
+          <button class="bill-discard" onclick="discardBillable()">Discard</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ===== MANUAL ENTRY TAB ===== -->
+  <div id="tab-manual" style="display:none">
+
+    <!-- Mode toggle for manual -->
+    <div class="card">
+      <div class="card-title">Entry type</div>
+      <div class="type-row">
+        <button class="type-btn active" id="man-mode-office" onclick="setManualMode('office')">🏢 Office hours</button>
+        <button class="type-btn" id="man-mode-remote" onclick="setManualMode('remote')">💻 Remote billable</button>
+      </div>
+    </div>
+
+    <!-- OFFICE MANUAL -->
+    <div id="man-office-form">
+      <div class="card">
+        <div class="card-title">Log office hours</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div>
+            <label class="form-label">Date</label>
+            <input class="form-input" style="margin:0" type="date" id="mo-date" />
+          </div>
+          <div>
+            <label class="form-label">Day type</label>
+            <select class="form-input" style="margin:0" id="mo-daytype">
+              <option value="regular">Regular (Tue/Wed/Thu)</option>
+              <option value="extra">Extra day</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div>
+            <label class="form-label">Time in</label>
+            <input class="form-input" style="margin:0" type="time" id="mo-in" />
+          </div>
+          <div>
+            <label class="form-label">Time out</label>
+            <input class="form-input" style="margin:0" type="time" id="mo-out" />
+          </div>
+        </div>
+        <div style="margin-bottom:12px">
+          <label class="form-label">Note (optional)</label>
+          <input class="form-input" style="margin:0" type="text" id="mo-note" placeholder="e.g. Covered for Adrian" />
+        </div>
+        <div id="mo-preview" style="background:var(--bg3);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px;font-size:13px;color:var(--text2);display:none"></div>
+        <button class="send-btn" onclick="saveManualOffice()">Add office entry</button>
+      </div>
+    </div>
+
+    <!-- REMOTE MANUAL -->
+    <div id="man-remote-form" style="display:none">
+      <div class="card">
+        <div class="card-title">Log remote billable time</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div>
+            <label class="form-label">Date</label>
+            <input class="form-input" style="margin:0" type="date" id="mr-date" />
+          </div>
+          <div>
+            <label class="form-label">Start time</label>
+            <input class="form-input" style="margin:0" type="time" id="mr-start" />
+          </div>
+        </div>
+        <div style="margin-bottom:10px">
+          <label class="form-label">Activity type</label>
+          <div class="act-grid" id="man-act-grid"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+          <div>
+            <label class="form-label">Duration (minutes)</label>
+            <input class="form-input" style="margin:0" type="number" id="mr-mins" placeholder="e.g. 45" min="6" step="6" oninput="updateRemotePreview()" />
+          </div>
+          <div>
+            <label class="form-label">Billable units (auto)</label>
+            <input class="form-input" style="margin:0;color:var(--gold);font-weight:700" type="text" id="mr-units-display" readonly placeholder="0.0 units" />
+          </div>
+        </div>
+        <div style="margin-bottom:12px">
+          <label class="form-label">Description</label>
+          <input class="form-input" style="margin:0" type="text" id="mr-desc" placeholder="e.g. Research for property case" />
+        </div>
+        <div id="mr-preview" style="background:var(--bg3);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px;font-size:13px;color:var(--text2);display:none"></div>
+        <button class="send-btn" onclick="saveManualRemote()">Add remote entry</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== LOG TAB ===== -->
+  <div id="tab-log" style="display:none">
+    <div class="filter-row" id="log-filters"></div>
+    <div id="log-list"></div>
+  </div>
+
+  <!-- ===== REPORT TAB ===== -->
+  <div id="tab-report" style="display:none">
+    <div class="card">
+      <div class="filter-row" id="rpt-filters" style="margin-bottom:14px"></div>
+
+      <div class="rpt-header">
+        <div class="rpt-logo"><img id="rpt-logo" src="" alt="" /></div>
+        <div>
+          <div class="rpt-org">Ministerios Una Voz Profética en las Naciones</div>
+          <div class="rpt-person" id="rpt-name">—</div>
+          <div class="rpt-period" id="rpt-period">—</div>
+        </div>
+      </div>
+
+      <!-- Office section -->
+      <div class="rpt-section" id="rpt-office-section">
+        <div class="rpt-section-title">🏢 Office hours (Tue · Wed · Thu)</div>
+        <table class="rpt-table">
+          <thead><tr><th>Date</th><th>In</th><th>Out</th><th style="text-align:right">Hours</th></tr></thead>
+          <tbody id="rpt-office-tbody"></tbody>
+        </table>
+        <div class="rpt-subtotal" id="rpt-office-subtotal">
+          <span style="color:var(--text2)">Office hours subtotal</span>
+          <span style="color:var(--text)">—</span>
+        </div>
+        <div class="rpt-subtotal" style="margin-top:5px;background:var(--gold-bg)">
+          <span style="color:var(--gold-dim)">Cursos Pastor Adrian Amado</span>
+          <span style="color:var(--gold)">$100.00</span>
+        </div>
+      </div>
+
+      <!-- Remote section -->
+      <div class="rpt-section" id="rpt-remote-section">
+        <div class="rpt-section-title">💻 Remote billable hours</div>
+        <table class="rpt-table">
+          <thead><tr><th>Date</th><th>Activity</th><th>Description</th><th style="text-align:right">Units</th></tr></thead>
+          <tbody id="rpt-remote-tbody"></tbody>
+        </table>
+        <div class="rpt-subtotal" id="rpt-remote-subtotal" style="margin-top:5px">
+          <span style="color:var(--text2)">Remote billable subtotal</span>
+          <span style="color:var(--text)">—</span>
+        </div>
+      </div>
+
+      <!-- Grand total -->
+      <div class="rpt-grand" id="rpt-grand">
+        <div class="rpt-grand-label">Grand total</div>
+        <div class="rpt-grand-val" id="rpt-grand-val">—</div>
+      </div>
+
+      <!-- Send section -->
+      <div class="send-section">
+        <div class="card-title" style="margin-top:16px;margin-bottom:10px">Send via Gmail</div>
+        <div class="mgr-chips">
+          <span class="mgr-chip" onclick="setMgr('mariadamado@gmail.com','Maria Amado')">Maria Amado</span>
+          <span class="mgr-chip" onclick="setMgr('adrianamado@gmail.com','Adrian Amado')">Adrian Amado</span>
+          <span class="mgr-chip" onclick="setMgr('mariadamado@gmail.com,adrianamado@gmail.com','Both')">Both</span>
+        </div>
+        <label class="form-label">Manager email(s)</label>
+        <input class="form-input" type="email" id="mgr-email" placeholder="manager@email.com" />
+        <label class="form-label">Week ending</label>
+        <input class="form-input" type="date" id="send-weekend" />
+        <button class="send-btn" id="send-report-btn" onclick="sendReport()">Send report via Gmail</button>
+        <p style="font-size:11px;color:var(--text3);text-align:center;margin-top:7px">Creates a Gmail draft — review and send from your Drafts folder</p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+const RATE = 22;
+const CURSOS = 100;
+const WORK_DAYS = [2,3,4]; // Tue Wed Thu
+const SIX_MIN = 6 * 60 * 1000;
+const SK = 'muvpn_unified_v1';
+
+const ACTIVITIES = [
+  {id:'research',label:'Research',icon:'🔍'},{id:'calls',label:'Calls',icon:'📞'},
+  {id:'drafting',label:'Drafting',icon:'✍️'},{id:'review',label:'Review',icon:'📄'},
+  {id:'meeting',label:'Meeting',icon:'🤝'},{id:'admin',label:'Admin',icon:'📋'},
+  {id:'email',label:'Email',icon:'📧'},{id:'planning',label:'Planning',icon:'🗓️'},
+  {id:'other',label:'Other',icon:'⚙️'}
+];
+
+let data = { entries:[], prefs:{name:'',email:'',mgrEmail:''} };
+let mode = 'office';
+let logFilter = 'week', rptFilter = 'week';
+// Office clock state
+let clkRunning=false, clkStart=null, clkInterval=null;
+// Billable timer state
+let billRunning=false, billStart=null, billInterval=null;
+let selAct = 'research';
+let syncTO=null;
+
+['logo-img','setup-logo','rpt-logo'].forEach(function(id){var el=document.getElementById(id); if(el) el.src='icon-192.png';});
+
+// ---- STORAGE ----
+function save() {
+  setSyncStatus('syncing');
+  clearTimeout(syncTO);
+  syncTO = setTimeout(()=>{
+    try { localStorage.setItem(SK, JSON.stringify({data,mode,selAct})); setSyncStatus('saved'); }
+    catch(e){ setSyncStatus('error'); }
+  },400);
+}
+function load() {
+  try {
+    const r = localStorage.getItem(SK);
+    if(!r) return false;
+    const p = JSON.parse(r);
+    data=p.data||data; mode=p.mode||'office'; selAct=p.selAct||'research';
+    return !!data.prefs.name;
+  } catch(e){ return false; }
+}
+function setSyncStatus(s){
+  document.getElementById('sync-dot').className='sync-dot'+(s==='syncing'?' syncing':'');
+  document.getElementById('sync-status').textContent=s==='syncing'?'Saving...':'Saved';
+}
+
+// ---- SETUP ----
+function completeSetup(){
+  const n=document.getElementById('setup-name').value.trim();
+  const e=document.getElementById('setup-email').value.trim();
+  if(!n){document.getElementById('setup-name').focus();return;}
+  data.prefs.name=n; data.prefs.email=e;
+  save(); showApp();
+}
+function showSetup(){
+  document.getElementById('setup-name').value=data.prefs.name||'';
+  document.getElementById('setup-email').value=data.prefs.email||'';
+  document.getElementById('setup-screen').style.display='flex';
+  document.getElementById('main-app').style.display='none';
+}
+function showApp(){
+  document.getElementById('setup-screen').style.display='none';
+  document.getElementById('main-app').style.display='block';
+  refreshNameUI();
+  setMode(mode);
+}
+function refreshNameUI(){
+  const n=data.prefs.name||'—';
+  document.getElementById('hdr-name').textContent=n;
+  document.getElementById('rpt-name').textContent=n;
+}
+
+// ---- MODE ----
+function setMode(m){
+  mode=m;
+  document.getElementById('mode-office').className='mode-btn'+(m==='office'?' active office':' office');
+  document.getElementById('mode-remote').className='mode-btn'+(m==='remote'?' active remote':' remote');
+  document.getElementById('office-track').style.display=m==='office'?'block':'none';
+  document.getElementById('remote-track').style.display=m==='remote'?'block':'none';
+  updateOfficeMetrics(); updateRemoteMetrics();
+  checkThursday();
+  save();
+}
+
+// ---- HELPERS ----
+function calcH(e){ return (new Date(e.out)-new Date(e.in))/3600000; }
+function msToStr(ms){ const t=Math.floor(ms/1000),h=Math.floor(t/3600),m=Math.floor((t%3600)/60),s=t%60; return pad(h)+':'+pad(m)+':'+pad(s); }
+function pad(n){ return String(n).padStart(2,'0'); }
+function msToInc(ms){ return ms<=0?0:Math.ceil(ms/SIX_MIN)/10; }
+function fmtDate(d){ return new Date(d).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}); }
+function fmtTime(d){ return new Date(d).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true}); }
+function getAct(id){ return ACTIVITIES.find(a=>a.id===id)||ACTIVITIES[8]; }
+
+function getFiltered(filter, type){
+  const now=new Date();
+  return data.entries.filter(e=>{
+    if(type && e.mode!==type) return false;
+    const d=new Date(e.startedAt||e.in);
+    if(filter==='today'){ const t=new Date(now); t.setHours(0,0,0,0); const t2=new Date(t); t2.setDate(t.getDate()+1); return d>=t&&d<t2; }
+    if(filter==='week'){
+      const diff=now.getDay()===0?-6:1-now.getDay();
+      const mon=new Date(now); mon.setDate(now.getDate()+diff); mon.setHours(0,0,0,0);
+      const sun=new Date(mon); sun.setDate(mon.getDate()+6); sun.setHours(23,59,59,999);
+      return d>=mon&&d<=sun;
+    }
+    if(filter==='month'){ return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear(); }
+    return true;
+  });
+}
+
+// ---- OFFICE CLOCK ----
+function toggleClock(){
+  const now=new Date();
+  if(!clkRunning){
+    clkRunning=true; clkStart=now;
+    document.getElementById('clk-btn').className='clock-btn clkin';
+    document.getElementById('clk-label').textContent='Clock Out';
+    document.getElementById('clk-badge').textContent='Clocked in — Office';
+    document.getElementById('clk-badge').className='badge badge-in';
+    clkInterval=setInterval(()=>{
+      const ms=Date.now()-clkStart;
+      document.getElementById('clk-timer').textContent=msToStr(ms);
+      updateOfficeMetrics();
+      if(new Date().getSeconds()===0) checkThursday();
+    },1000);
+    showToast('Clocked in at '+fmtTime(now));
+  } else {
+    clearInterval(clkInterval);
+    const entry={id:Date.now(),mode:'office',in:clkStart.toISOString(),out:now.toISOString(),startedAt:clkStart.toISOString()};
+    data.entries.unshift(entry);
+    clkRunning=false; clkStart=null;
+    document.getElementById('clk-btn').className='clock-btn clkout';
+    document.getElementById('clk-label').textContent='Clock In';
+    document.getElementById('clk-badge').textContent='Not clocked in';
+    document.getElementById('clk-badge').className='badge badge-out';
+    document.getElementById('clk-timer').textContent='—';
+    const h=calcH(entry);
+    showToast('Logged '+h.toFixed(2)+'h office time');
+    save(); updateOfficeMetrics();
+  }
+}
+
+function updateOfficeMetrics(){
+  const week=getFiltered('week','office');
+  let wkH=week.reduce((s,e)=>s+calcH(e),0);
+  if(clkRunning&&clkStart) wkH+=(Date.now()-clkStart)/3600000;
+  const pay=Math.round(wkH*RATE)+CURSOS;
+  document.getElementById('o-week-hrs').textContent=wkH.toFixed(1)+'h';
+  document.getElementById('o-week-pay').textContent='$'+pay.toLocaleString();
+  document.getElementById('o-week-entries').textContent=week.length+(week.length===1?' entry':' entries');
+  // today
+  const tday=getFiltered('today','office');
+  let tdH=tday.reduce((s,e)=>s+calcH(e),0);
+  if(clkRunning&&clkStart) tdH+=(Date.now()-clkStart)/3600000;
+  document.getElementById('o-today-hrs').textContent=tdH.toFixed(1)+'h';
+  document.getElementById('o-today-label').textContent=clkRunning?'In progress':'Office';
+}
+
+// ---- BILLABLE TIMER ----
+function renderActGrid(){
+  document.getElementById('act-grid').innerHTML=ACTIVITIES.map(a=>
+    `<button class="act-btn${selAct===a.id?' active':''}" onclick="selActivity('${a.id}')"><span class="ai">${a.icon}</span>${a.label}</button>`
+  ).join('');
+}
+function selActivity(id){ selAct=id; renderActGrid(); save(); }
+
+function toggleBillable(){
+  if(!billRunning){
+    billRunning=true; billStart=Date.now();
+    document.getElementById('bill-btn').className='bill-start running';
+    document.getElementById('bill-btn').textContent='■ Stop & save';
+    document.getElementById('bill-clock').className='billable-time';
+    billInterval=setInterval(updateBillDisplay,500);
+    showToast('Billable timer started');
+  } else {
+    stopBillable();
+  }
+}
+function updateBillDisplay(){
+  if(!billRunning||!billStart) return;
+  const ms=Date.now()-billStart;
+  document.getElementById('bill-clock').textContent=msToStr(ms);
+  const inc=msToInc(ms);
+  document.getElementById('bill-inc').textContent=inc.toFixed(1);
+  renderIncPills(ms);
+}
+function renderIncPills(ms){
+  const cur=Math.ceil(ms/SIX_MIN);
+  const show=Math.max(10,cur+3);
+  let html='';
+  for(let i=1;i<=show;i++){
+    const mins=i*6; const label=mins<60?mins+'m':(mins/60).toFixed(1)+'h';
+    const cls=i===cur?'inc-pill lit':i<cur?'inc-pill past':'inc-pill';
+    html+=`<span class="${cls}">${(i/10).toFixed(1)}</span>`;
+  }
+  document.getElementById('inc-pills').innerHTML=html;
+}
+function stopBillable(){
+  clearInterval(billInterval);
+  const ms=Date.now()-billStart;
+  if(ms<10000){ showToast('Too short to log'); resetBillable(); return; }
+  const inc=msToInc(ms);
+  const desc=document.getElementById('bill-desc').value.trim();
+  const entry={id:Date.now(),mode:'remote',activity:selAct,description:desc,startedAt:new Date(billStart).toISOString(),ms,increments:inc};
+  data.entries.unshift(entry);
+  save(); updateRemoteMetrics();
+  showToast('Logged '+inc.toFixed(1)+' units ('+msToStr(ms)+')');
+  resetBillable();
+  document.getElementById('bill-desc').value='';
+}
+function discardBillable(){
+  if(billRunning&&!confirm('Discard current timer?')) return;
+  resetBillable(); showToast('Discarded');
+}
+function resetBillable(){
+  clearInterval(billInterval); billRunning=false; billStart=null;
+  document.getElementById('bill-clock').textContent='00:00:00';
+  document.getElementById('bill-clock').className='billable-time stopped';
+  document.getElementById('bill-btn').className='bill-start idle';
+  document.getElementById('bill-btn').textContent='▶ Start timer';
+  document.getElementById('bill-inc').textContent='0.0';
+  document.getElementById('inc-pills').innerHTML='';
+}
+function updateRemoteMetrics(){
+  const tday=getFiltered('today','remote');
+  const week=getFiltered('week','remote');
+  const tdInc=tday.reduce((s,e)=>s+e.increments,0);
+  const tdMs =tday.reduce((s,e)=>s+e.ms,0);
+  const wkInc=week.reduce((s,e)=>s+e.increments,0);
+  document.getElementById('r-today-inc').textContent=tdInc.toFixed(1);
+  document.getElementById('r-today-hrs').textContent=(tdMs/3600000).toFixed(2)+'h';
+  document.getElementById('r-week-inc').textContent=wkInc.toFixed(1);
+}
+
+// ---- THURSDAY BANNER ----
+function checkThursday(){
+  const now=new Date(); const banner=document.getElementById('thu-banner');
+  if(now.getDay()!==4){ banner.style.display='none'; return; }
+  const allWeek=getFiltered('week',null);
+  if(!allWeek.length){ banner.style.display='none'; return; }
+  const minsLeft=(16*60)-(now.getHours()*60+now.getMinutes());
+  banner.style.display='block';
+  if(minsLeft>0){
+    const h=Math.floor(minsLeft/60),m=minsLeft%60;
+    banner.innerHTML=`<div class="thu-banner pre">
+      <div class="thu-title">📋 Timesheet due today by 4:00 PM</div>
+      <div class="thu-sub">${h>0?h+'h '+m+'m':m+' min'} remaining · ${allWeek.length} entries logged</div>
+      <button class="thu-btn" onclick="showTab('report')">Review & send report →</button>
+    </div>`;
+  } else {
+    banner.innerHTML=`<div class="thu-banner due">
+      <div class="thu-title">⚠️ 4:00 PM deadline reached</div>
+      <div class="thu-sub">${allWeek.length} entries ready — send now</div>
+      <button class="thu-btn" onclick="showTab('report')">Send report now →</button>
+    </div>`;
+  }
+}
+
+// ---- LOG ----
+function renderLogFilters(){
+  const fs=[{id:'today',l:'Today'},{id:'week',l:'This week'},{id:'month',l:'Month'},{id:'all',l:'All'}];
+  document.getElementById('log-filters').innerHTML=fs.map(f=>
+    `<button class="fbtn${logFilter===f.id?' active':''}" onclick="setLogFilter('${f.id}')">${f.l}</button>`
+  ).join('');
+}
+function setLogFilter(f){ logFilter=f; renderLog(); }
+function renderLog(){
+  renderLogFilters();
+  const entries=getFiltered(logFilter,null).slice().sort((a,b)=>new Date(b.startedAt||b.in)-new Date(a.startedAt||a.in));
+  const list=document.getElementById('log-list');
+  if(!entries.length){ list.innerHTML='<div class="empty">No entries for this period</div>'; return; }
+  list.innerHTML=entries.map(e=>{
+    const isOffice=e.mode==='office';
+    const label=isOffice?'🏢 Office':'🔍 '+getAct(e.activity).icon+' '+getAct(e.activity).label; const manualTag=e.manual?'<span style="font-size:10px;color:var(--text3);margin-left:5px;background:var(--bg4);padding:1px 5px;border-radius:3px">manual</span>':'';
+    const val=isOffice?calcH(e).toFixed(2)+'h':e.increments.toFixed(1)+' units';
+    const sub=isOffice?fmtDate(e.in)+' · '+fmtTime(e.in)+' – '+fmtTime(e.out):fmtDate(e.startedAt)+' · '+fmtTime(e.startedAt)+(e.description?' · '+e.description:'');
+    return `<div class="entry">
+      <div class="entry-row">
+        <div>
+          <div class="entry-label"><span class="entry-mode-dot ${e.mode}"></span>${label}${manualTag}</div>
+          <div class="entry-sub">${sub}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <div><div class="entry-val">${val}</div></div>
+          <button class="del-btn" onclick="delEntry(${e.id})">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function delEntry(id){
+  if(!confirm('Delete this entry?')) return;
+  data.entries=data.entries.filter(e=>e.id!==id);
+  save(); renderLog(); updateOfficeMetrics(); updateRemoteMetrics();
+}
+
+// ---- REPORT ----
+function renderRptFilters(){
+  const fs=[{id:'today',l:'Today'},{id:'week',l:'This week'},{id:'month',l:'Month'},{id:'all',l:'All'}];
+  document.getElementById('rpt-filters').innerHTML=fs.map(f=>
+    `<button class="fbtn${rptFilter===f.id?' active':''}" onclick="setRptFilter('${f.id}')">${f.l}</button>`
+  ).join('');
+}
+function setRptFilter(f){ rptFilter=f; renderReport(); }
+function renderReport(){
+  renderRptFilters();
+  const periodLabels={today:'Today',week:'This week',month:'This month',all:'All time'};
+  document.getElementById('rpt-period').textContent=periodLabels[rptFilter];
+
+  // Office entries
+  const offEntries=getFiltered(rptFilter,'office').slice().sort((a,b)=>new Date(a.in)-new Date(b.in));
+  let offH=0;
+  document.getElementById('rpt-office-tbody').innerHTML = offEntries.length
+    ? offEntries.map(e=>{ const h=calcH(e); offH+=h;
+        return `<tr><td>${fmtDate(e.in)}</td><td>${fmtTime(e.in)}</td><td>${fmtTime(e.out)}</td><td style="text-align:right;font-weight:600">${h.toFixed(2)}h</td></tr>`; }).join('')
+    : `<tr><td colspan="4" style="color:var(--text3);padding:12px;text-align:center">No office entries</td></tr>`;
+  const offPay=offH*RATE;
+  document.getElementById('rpt-office-subtotal').innerHTML=`<span style="color:var(--text2)">${offH.toFixed(2)}h × $${RATE}/hr</span><span style="color:var(--text)">$${offPay.toFixed(2)}</span>`;
+
+  // Remote entries
+  const remEntries=getFiltered(rptFilter,'remote').slice().sort((a,b)=>new Date(a.startedAt)-new Date(b.startedAt));
+  let remInc=0, remMs=0;
+  document.getElementById('rpt-remote-tbody').innerHTML = remEntries.length
+    ? remEntries.map(e=>{ remInc+=e.increments; remMs+=e.ms;
+        const act=getAct(e.activity);
+        return `<tr><td>${fmtDate(e.startedAt)}<div class="sub">${fmtTime(e.startedAt)}</div></td><td><span class="act-tag">${act.icon} ${act.label}</span></td><td style="color:var(--text2)">${e.description||'—'}</td><td style="text-align:right;font-weight:600;color:var(--gold)">${e.increments.toFixed(1)}</td></tr>`; }).join('')
+    : `<tr><td colspan="4" style="color:var(--text3);padding:12px;text-align:center">No remote entries</td></tr>`;
+  document.getElementById('rpt-remote-subtotal').innerHTML=`<span style="color:var(--text2)">${remInc.toFixed(1)} billable units (${(remMs/3600000).toFixed(2)}h raw)</span><span style="color:var(--gold)">${remInc.toFixed(1)} units</span>`;
+
+  // Grand total
+  const grandPayStr='$'+(offPay+CURSOS).toFixed(2)+' office + '+remInc.toFixed(1)+' remote units';
+  document.getElementById('rpt-grand-val').textContent=grandPayStr;
+
+  // Pre-fill send fields
+  const {start}=getWeekRange();
+  const fri=new Date(start); fri.setDate(start.getDate()+4);
+  document.getElementById('send-weekend').value=fri.toISOString().split('T')[0];
+  if(data.prefs.mgrEmail) document.getElementById('mgr-email').value=data.prefs.mgrEmail;
+}
+
+function getWeekRange(){
+  const now=new Date(); const diff=now.getDay()===0?-6:1-now.getDay();
+  const mon=new Date(now); mon.setDate(now.getDate()+diff); mon.setHours(0,0,0,0);
+  return {start:mon};
+}
+
+function setMgr(email,label){ document.getElementById('mgr-email').value=email; showToast('Selected: '+label); }
+
+async function sendReport(){
+  const email=document.getElementById('mgr-email').value.trim();
+  const weekend=document.getElementById('send-weekend').value;
+  const name=data.prefs.name;
+  if(!email){ showToast('Select or enter manager email'); return; }
+  if(!name){ showToast('Set your name in profile first'); return; }
+  data.prefs.mgrEmail=email; save();
+
+  const offEntries=getFiltered(rptFilter,'office').slice().sort((a,b)=>new Date(a.in)-new Date(b.in));
+  const remEntries=getFiltered(rptFilter,'remote').slice().sort((a,b)=>new Date(a.startedAt)-new Date(b.startedAt));
+  let offH=0, offLines='';
+  offEntries.forEach(e=>{ const h=calcH(e); offH+=h;
+    const d=new Date(e.in).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    offLines+=d+': '+fmtTime(new Date(e.in))+'-'+fmtTime(new Date(e.out))+' ('+h.toFixed(2)+'h)\n';
+  });
+  let remInc=0, remMs=0, remLines='';
+  remEntries.forEach(e=>{ remInc+=e.increments; remMs+=e.ms;
+    const act=getAct(e.activity);
+    const d=new Date(e.startedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    remLines+=d+' ['+act.label+'] '+(e.description||'').substring(0,30)+' — '+e.increments.toFixed(1)+' units\n';
+  });
+
+  const body=
+    'Hi,\n\nWork report for week ending '+weekend+'.\n'+
+    'Employee: '+name+(data.prefs.email?' ('+data.prefs.email+')':'')+
+    '\nOrg: Ministerios Una Voz Profetica en las Naciones\n\n'+
+    '--- OFFICE HOURS ($'+RATE+'/hr) ---\n'+
+    (offLines||'(none)\n')+
+    'Office subtotal: '+offH.toFixed(2)+'h = $'+(offH*RATE).toFixed(2)+
+    '\nCursos Pastor Adrian Amado: $'+CURSOS+
+    '\nOffice total: $'+(offH*RATE+CURSOS).toFixed(2)+
+    '\n\n--- REMOTE BILLABLE ---\n'+
+    (remLines||'(none)\n')+
+    'Remote subtotal: '+remInc.toFixed(1)+' units ('+( remMs/3600000).toFixed(2)+'h)'+
+    '\n\n--- GRAND TOTAL ---\n'+
+    'Office+Cursos: $'+(offH*RATE+CURSOS).toFixed(2)+
+    '  |  Remote: '+remInc.toFixed(1)+' units'+
+    '\n\nThank you,\n'+name;
+
+  const subject = 'Work Report — '+name+' — Week ending '+weekend+' — Ministerios Una Voz Profetica';
+
+  // Use Anthropic API + Gmail MCP to create a real Gmail draft
+  const sendBtn = document.getElementById('send-report-btn');
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'Creating draft...';
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        mcp_servers: [{ type: 'url', url: 'https://gmail.mcp.claude.com/mcp', name: 'gmail' }],
+        messages: [{
+          role: 'user',
+          content: 'Create a Gmail draft with this exact info. Do not add anything. to: "' + email + '", subject: "' + subject + '", body:
+
+' + body
+        }]
+      })
+    });
+    const result = await response.json();
+    // Check for success in response
+    const textBlock = (result.content||[]).find(b=>b.type==='text');
+    const responseText = textBlock ? textBlock.text.toLowerCase() : '';
+    if (responseText.includes('draft') || responseText.includes('created') || responseText.includes('saved')) {
+      showToast('✓ Draft saved to Gmail Drafts folder!');
+      sendBtn.textContent = '✓ Draft created — check Gmail Drafts';
+      sendBtn.style.background = 'var(--green-bg)';
+      sendBtn.style.color = 'var(--green-text)';
+      sendBtn.style.borderColor = 'var(--green-border)';
+    } else {
+      throw new Error('Draft may not have been created');
+    }
+  } catch(err) {
+    // Fallback: copy to clipboard
+    try {
+      await navigator.clipboard.writeText(body);
+      showToast('Copied to clipboard — paste into Gmail');
+    } catch(e) {
+      showToast('Error — try copying the report manually');
+    }
+    sendBtn.textContent = 'Body copied — paste in Gmail';
+  } finally {
+    sendBtn.disabled = false;
+    setTimeout(()=>{ sendBtn.textContent = 'Send report via Gmail'; sendBtn.style.background=''; sendBtn.style.color=''; sendBtn.style.borderColor=''; }, 8000);
+  }
+  showToast('Opening Gmail...');
+}
+
+// ---- MANUAL MODE ----
+let manualMode = 'office';
+let manSelAct = 'research';
+
+function setManualMode(m){
+  manualMode = m;
+  document.getElementById('man-mode-office').className = 'type-btn'+(m==='office'?' active':'');
+  document.getElementById('man-mode-remote').className = 'type-btn'+(m==='remote'?' active':'');
+  document.getElementById('man-office-form').style.display = m==='office'?'block':'none';
+  document.getElementById('man-remote-form').style.display = m==='remote'?'block':'none';
+}
+
+function renderManActGrid(){
+  document.getElementById('man-act-grid').innerHTML = ACTIVITIES.map(a=>
+    `<button class="act-btn${manSelAct===a.id?' active':''}" onclick="setManAct('${a.id}')"><span class="ai">${a.icon}</span>${a.label}</button>`
+  ).join('');
+}
+function setManAct(id){ manSelAct=id; renderManActGrid(); updateRemotePreview(); }
+
+function updateOfficePreview(){
+  const date = document.getElementById('mo-date').value;
+  const inT  = document.getElementById('mo-in').value;
+  const outT = document.getElementById('mo-out').value;
+  const prev = document.getElementById('mo-preview');
+  if(!date||!inT||!outT){ prev.style.display='none'; return; }
+  const inD = new Date(date+'T'+inT), outD = new Date(date+'T'+outT);
+  if(outD<=inD){ prev.style.display='none'; return; }
+  const h = (outD-inD)/3600000;
+  prev.style.display='block';
+  prev.innerHTML = `Preview: <b style="color:var(--text)">${h.toFixed(2)}h</b> — pay <b style="color:var(--gold)">$${(h*RATE).toFixed(2)}</b> (+ $100 cursos counted weekly)`;
+}
+
+function updateRemotePreview(){
+  const mins = parseFloat(document.getElementById('mr-mins').value)||0;
+  const ms = mins * 60000;
+  const inc = msToInc(ms);
+  document.getElementById('mr-units-display').value = mins>0 ? inc.toFixed(1)+' units' : '';
+  const prev = document.getElementById('mr-preview');
+  if(mins<6){ prev.style.display='none'; return; }
+  prev.style.display='block';
+  const act = getAct(manSelAct);
+  prev.innerHTML = `Preview: <b style="color:var(--gold)">${inc.toFixed(1)} units</b> · ${act.icon} ${act.label} · ${mins} min logged`;
+}
+
+function saveManualOffice(){
+  const date = document.getElementById('mo-date').value;
+  const inT  = document.getElementById('mo-in').value;
+  const outT = document.getElementById('mo-out').value;
+  const note = document.getElementById('mo-note').value.trim();
+  if(!date){ showToast('Select a date'); return; }
+  if(!inT||!outT){ showToast('Enter time in and time out'); return; }
+  const inD = new Date(date+'T'+inT), outD = new Date(date+'T'+outT);
+  if(outD<=inD){ showToast('Time out must be after time in'); return; }
+  const h = (outD-inD)/3600000;
+  const entry = {id:Date.now(), mode:'office', in:inD.toISOString(), out:outD.toISOString(), startedAt:inD.toISOString(), note, manual:true};
+  data.entries.unshift(entry);
+  save(); updateOfficeMetrics();
+  document.getElementById('mo-in').value=''; document.getElementById('mo-out').value='';
+  document.getElementById('mo-note').value=''; document.getElementById('mo-preview').style.display='none';
+  showToast('Added '+h.toFixed(2)+'h for '+fmtDate(inD));
+}
+
+function saveManualRemote(){
+  const date  = document.getElementById('mr-date').value;
+  const startT= document.getElementById('mr-start').value;
+  const mins  = parseFloat(document.getElementById('mr-mins').value)||0;
+  const desc  = document.getElementById('mr-desc').value.trim();
+  if(!date){ showToast('Select a date'); return; }
+  if(mins<6){ showToast('Minimum 6 minutes (1 unit)'); return; }
+  const startD = startT ? new Date(date+'T'+startT) : new Date(date+'T09:00');
+  const ms = mins*60000;
+  const inc = msToInc(ms);
+  const entry = {id:Date.now(), mode:'remote', activity:manSelAct, description:desc, startedAt:startD.toISOString(), ms, increments:inc, manual:true};
+  data.entries.unshift(entry);
+  save(); updateRemoteMetrics();
+  document.getElementById('mr-mins').value=''; document.getElementById('mr-units-display').value='';
+  document.getElementById('mr-desc').value=''; document.getElementById('mr-preview').style.display='none';
+  showToast('Added '+inc.toFixed(1)+' units for '+fmtDate(startD));
+}
+
+// ---- UI ----
+function showTab(t){
+  ['track','manual','log','report'].forEach(x=>{ document.getElementById('tab-'+x).style.display=x===t?'block':'none'; });
+  document.querySelectorAll('.tab').forEach((el,i)=>{ el.classList.toggle('active',['track','manual','log','report'][i]===t); });
+  if(t==='log') renderLog();
+  if(t==='report') renderReport();
+  if(t==='track') checkThursday();
+  if(t==='manual'){ renderManActGrid(); setManualMode(mode); }
+}
+function showToast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ---- INIT ----
+const hasProfile=load();
+renderActGrid();
+if(hasProfile){ showApp(); }
+else { document.getElementById('setup-screen').style.display='flex'; }
+updateOfficeMetrics(); updateRemoteMetrics(); checkThursday();
+setSyncStatus('saved');
+document.getElementById('rpt-period').textContent='This week';
+// Pre-fill manual dates with today
+const todayISO = new Date().toISOString().split('T')[0];
+document.getElementById('mo-date').value = todayISO;
+document.getElementById('mr-date').value = todayISO;
+// Live preview on office time change
+['mo-date','mo-in','mo-out'].forEach(id=>{ document.getElementById(id).addEventListener('input', updateOfficePreview); });
+</script>
+
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
