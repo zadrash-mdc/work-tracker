@@ -506,7 +506,7 @@ function showApp(){
   setMode(mode);
 }
 function refreshNameUI(){
-  const n=data.prefs.name||'—';
+  const n=data.prefs.name||'\u2014';
   document.getElementById('hdr-name').textContent=n;
   document.getElementById('rpt-name').textContent=n;
 }
@@ -556,7 +556,7 @@ function toggleClock(){
     clkRunning=true; clkStart=now;
     document.getElementById('clk-btn').className='clock-btn clkin';
     document.getElementById('clk-label').textContent='Clock Out';
-    document.getElementById('clk-badge').textContent='Clocked in — Office';
+    document.getElementById('clk-badge').textContent='Clocked in \u2014 Office';
     document.getElementById('clk-badge').className='badge badge-in';
     clkInterval=setInterval(()=>{
       const ms=Date.now()-clkStart;
@@ -574,7 +574,7 @@ function toggleClock(){
     document.getElementById('clk-label').textContent='Clock In';
     document.getElementById('clk-badge').textContent='Not clocked in';
     document.getElementById('clk-badge').className='badge badge-out';
-    document.getElementById('clk-timer').textContent='—';
+    document.getElementById('clk-timer').textContent='\u2014';
     const h=calcH(entry);
     showToast('Logged '+h.toFixed(2)+'h office time');
     save(); updateOfficeMetrics();
@@ -609,7 +609,7 @@ function toggleBillable(){
   if(!billRunning){
     billRunning=true; billStart=Date.now();
     document.getElementById('bill-btn').className='bill-start running';
-    document.getElementById('bill-btn').textContent='■ Stop & save';
+    document.getElementById('bill-btn').textContent='\u25a0 Stop & save';
     document.getElementById('bill-clock').className='billable-time';
     billInterval=setInterval(updateBillDisplay,500);
     showToast('Billable timer started');
@@ -658,7 +658,7 @@ function resetBillable(){
   document.getElementById('bill-clock').textContent='00:00:00';
   document.getElementById('bill-clock').className='billable-time stopped';
   document.getElementById('bill-btn').className='bill-start idle';
-  document.getElementById('bill-btn').textContent='▶ Start timer';
+  document.getElementById('bill-btn').textContent='\u25b6 Start timer';
   document.getElementById('bill-inc').textContent='0.0';
   document.getElementById('inc-pills').innerHTML='';
 }
@@ -685,14 +685,14 @@ function checkThursday(){
     const h=Math.floor(minsLeft/60),m=minsLeft%60;
     banner.innerHTML=`<div class="thu-banner pre">
       <div class="thu-title">📋 Timesheet due today by 4:00 PM</div>
-      <div class="thu-sub">${h>0?h+'h '+m+'m':m+' min'} remaining · ${allWeek.length} entries logged</div>
-      <button class="thu-btn" onclick="showTab('report')">Review & send report →</button>
+      <div class="thu-sub">${h>0?h+'h '+m+'m':m+' min'} remaining \u00b7 ${allWeek.length} entries logged</div>
+      <button class="thu-btn" onclick="showTab('report')">Review & send report \u2192</button>
     </div>`;
   } else {
     banner.innerHTML=`<div class="thu-banner due">
-      <div class="thu-title">⚠️ 4:00 PM deadline reached</div>
-      <div class="thu-sub">${allWeek.length} entries ready — send now</div>
-      <button class="thu-btn" onclick="showTab('report')">Send report now →</button>
+      <div class="thu-title">\u26a0️ 4:00 PM deadline reached</div>
+      <div class="thu-sub">${allWeek.length} entries ready \u2014 send now</div>
+      <button class="thu-btn" onclick="showTab('report')">Send report now \u2192</button>
     </div>`;
   }
 }
@@ -714,7 +714,7 @@ function renderLog(){
     const isOffice=e.mode==='office';
     const label=isOffice?'🏢 Office':'🔍 '+getAct(e.activity).icon+' '+getAct(e.activity).label; const manualTag=e.manual?'<span style="font-size:10px;color:var(--text3);margin-left:5px;background:var(--bg4);padding:1px 5px;border-radius:3px">manual</span>':'';
     const val=isOffice?calcH(e).toFixed(2)+'h':e.increments.toFixed(1)+' units';
-    const sub=isOffice?fmtDate(e.in)+' · '+fmtTime(e.in)+' – '+fmtTime(e.out):fmtDate(e.startedAt)+' · '+fmtTime(e.startedAt)+(e.description?' · '+e.description:'');
+    const sub=isOffice?fmtDate(e.in)+' \u00b7 '+fmtTime(e.in)+' \u2013 '+fmtTime(e.out):fmtDate(e.startedAt)+' \u00b7 '+fmtTime(e.startedAt)+(e.description?' \u00b7 '+e.description:'');
     return `<div class="entry">
       <div class="entry-row">
         <div>
@@ -723,7 +723,7 @@ function renderLog(){
         </div>
         <div style="display:flex;align-items:center;gap:4px">
           <div><div class="entry-val">${val}</div></div>
-          <button class="del-btn" onclick="delEntry(${e.id})">✕</button>
+          <button class="del-btn" onclick="delEntry(${e.id})">\u2715</button>
         </div>
       </div>
     </div>`;
@@ -756,7 +756,7 @@ function renderReport(){
         return `<tr><td>${fmtDate(e.in)}</td><td>${fmtTime(e.in)}</td><td>${fmtTime(e.out)}</td><td style="text-align:right;font-weight:600">${h.toFixed(2)}h</td></tr>`; }).join('')
     : `<tr><td colspan="4" style="color:var(--text3);padding:12px;text-align:center">No office entries</td></tr>`;
   const offPay=offH*RATE;
-  document.getElementById('rpt-office-subtotal').innerHTML=`<span style="color:var(--text2)">${offH.toFixed(2)}h × $${RATE}/hr</span><span style="color:var(--text)">$${offPay.toFixed(2)}</span>`;
+  document.getElementById('rpt-office-subtotal').innerHTML=`<span style="color:var(--text2)">${offH.toFixed(2)}h \u00d7 $${RATE}/hr</span><span style="color:var(--text)">$${offPay.toFixed(2)}</span>`;
 
   // Remote entries
   const remEntries=getFiltered(rptFilter,'remote').slice().sort((a,b)=>new Date(a.startedAt)-new Date(b.startedAt));
@@ -764,7 +764,7 @@ function renderReport(){
   document.getElementById('rpt-remote-tbody').innerHTML = remEntries.length
     ? remEntries.map(e=>{ remInc+=e.increments; remMs+=e.ms;
         const act=getAct(e.activity);
-        return `<tr><td>${fmtDate(e.startedAt)}<div class="sub">${fmtTime(e.startedAt)}</div></td><td><span class="act-tag">${act.icon} ${act.label}</span></td><td style="color:var(--text2)">${e.description||'—'}</td><td style="text-align:right;font-weight:600;color:var(--gold)">${e.increments.toFixed(1)}</td></tr>`; }).join('')
+        return `<tr><td>${fmtDate(e.startedAt)}<div class="sub">${fmtTime(e.startedAt)}</div></td><td><span class="act-tag">${act.icon} ${act.label}</span></td><td style="color:var(--text2)">${e.description||'\u2014'}</td><td style="text-align:right;font-weight:600;color:var(--gold)">${e.increments.toFixed(1)}</td></tr>`; }).join('')
     : `<tr><td colspan="4" style="color:var(--text3);padding:12px;text-align:center">No remote entries</td></tr>`;
   document.getElementById('rpt-remote-subtotal').innerHTML=`<span style="color:var(--text2)">${remInc.toFixed(1)} billable units (${(remMs/3600000).toFixed(2)}h raw)</span><span style="color:var(--gold)">${remInc.toFixed(1)} units</span>`;
 
@@ -806,7 +806,7 @@ async function sendReport(){
   remEntries.forEach(e=>{ remInc+=e.increments; remMs+=e.ms;
     const act=getAct(e.activity);
     const d=new Date(e.startedAt).toLocaleDateString('en-US',{month:'short',day:'numeric'});
-    remLines+=d+' ['+act.label+'] '+(e.description||'').substring(0,30)+' — '+e.increments.toFixed(1)+' units\n';
+    remLines+=d+' ['+act.label+'] '+(e.description||'').substring(0,30)+' \u2014 '+e.increments.toFixed(1)+' units\n';
   });
 
   const body=
@@ -826,7 +826,7 @@ async function sendReport(){
     '  |  Remote: '+remInc.toFixed(1)+' units'+
     '\n\nThank you,\n'+name;
 
-  const subject = 'Work Report — '+name+' — Week ending '+weekend+' — Ministerios Una Voz Profetica';
+  const subject = 'Work Report \u2014 '+name+' \u2014 Week ending '+weekend+' \u2014 Ministerios Una Voz Profetica';
 
   // Use Anthropic API + Gmail MCP to create a real Gmail draft
   const sendBtn = document.getElementById('send-report-btn');
@@ -854,8 +854,8 @@ async function sendReport(){
     const textBlock = (result.content||[]).find(b=>b.type==='text');
     const responseText = textBlock ? textBlock.text.toLowerCase() : '';
     if (responseText.includes('draft') || responseText.includes('created') || responseText.includes('saved')) {
-      showToast('✓ Draft saved to Gmail Drafts folder!');
-      sendBtn.textContent = '✓ Draft created — check Gmail Drafts';
+      showToast('\u2713 Draft saved to Gmail Drafts folder!');
+      sendBtn.textContent = '\u2713 Draft created \u2014 check Gmail Drafts';
       sendBtn.style.background = 'var(--green-bg)';
       sendBtn.style.color = 'var(--green-text)';
       sendBtn.style.borderColor = 'var(--green-border)';
@@ -866,11 +866,11 @@ async function sendReport(){
     // Fallback: copy to clipboard
     try {
       await navigator.clipboard.writeText(body);
-      showToast('Copied to clipboard — paste into Gmail');
+      showToast('Copied to clipboard \u2014 paste into Gmail');
     } catch(e) {
-      showToast('Error — try copying the report manually');
+      showToast('Error \u2014 try copying the report manually');
     }
-    sendBtn.textContent = 'Body copied — paste in Gmail';
+    sendBtn.textContent = 'Body copied \u2014 paste in Gmail';
   } finally {
     sendBtn.disabled = false;
     setTimeout(()=>{ sendBtn.textContent = 'Send report via Gmail'; sendBtn.style.background=''; sendBtn.style.color=''; sendBtn.style.borderColor=''; }, 8000);
@@ -907,7 +907,7 @@ function updateOfficePreview(){
   if(outD<=inD){ prev.style.display='none'; return; }
   const h = (outD-inD)/3600000;
   prev.style.display='block';
-  prev.innerHTML = `Preview: <b style="color:var(--text)">${h.toFixed(2)}h</b> — pay <b style="color:var(--gold)">$${(h*RATE).toFixed(2)}</b> (+ $100 cursos counted weekly)`;
+  prev.innerHTML = `Preview: <b style="color:var(--text)">${h.toFixed(2)}h</b> \u2014 pay <b style="color:var(--gold)">$${(h*RATE).toFixed(2)}</b> (+ $100 cursos counted weekly)`;
 }
 
 function updateRemotePreview(){
@@ -919,7 +919,7 @@ function updateRemotePreview(){
   if(mins<6){ prev.style.display='none'; return; }
   prev.style.display='block';
   const act = getAct(manSelAct);
-  prev.innerHTML = `Preview: <b style="color:var(--gold)">${inc.toFixed(1)} units</b> · ${act.icon} ${act.label} · ${mins} min logged`;
+  prev.innerHTML = `Preview: <b style="color:var(--gold)">${inc.toFixed(1)} units</b> \u00b7 ${act.icon} ${act.label} \u00b7 ${mins} min logged`;
 }
 
 function saveManualOffice(){
